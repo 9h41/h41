@@ -2,14 +2,17 @@
 set -euo pipefail
 
 # Usage: ./scripts/update-formula.sh v0.1.0
-# Downloads release artifacts and updates Formula/h41.rb with correct version and SHA256 hashes.
+# Downloads release artifacts and generates Formula/h41.rb from the template.
 
 VERSION="${1#v}"
 TAG="v${VERSION}"
 REPO="9h41/h41"
+TEMPLATE="Formula/h41.rb.template"
 FORMULA="Formula/h41.rb"
 
 echo "Updating formula for ${TAG}..."
+
+cp "$TEMPLATE" "$FORMULA"
 
 declare -A FILES=(
   [MACOS_ARM64]="h41-macos-arm64.tar.gz"

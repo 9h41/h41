@@ -1,5 +1,5 @@
 use axum::{Router, response::Html, routing::{get, post}, extract::Path};
-use axum::http::StatusCode;
+use axum::http::{StatusCode, HeaderMap};
 use std::net::SocketAddr;
 
 use crate::ports;
@@ -32,7 +32,12 @@ async fn scan() -> String {
         .unwrap_or_default()
 }
 
-async fn kill_process(Path(pid): Path<i64>) -> StatusCode {
+async fn kill_process(headers: HeaderMap, Path(pid): Path<i64>) -> StatusCode {
+    // Require X-Requested-With header to prevent CSRF via simple form submissions
+    if !headers.contains_key("x-requested-with") {
+        return StatusCode::FORBIDDEN;
+    }
+
     if pid <= 0 {
         return StatusCode::BAD_REQUEST;
     }
