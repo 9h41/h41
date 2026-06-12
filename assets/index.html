@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>h41 - listening ports</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 2rem; background: #f8f9fa; color: #333; }
+        h1 { margin-bottom: 1.5rem; display: flex; align-items: center; gap: 1rem; }
+        button { padding: 0.5rem 1rem; background: #0969da; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 0.9rem; }
+        button:hover { background: #0550ae; }
+        table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        th { background: #f1f3f5; text-align: left; padding: 0.75rem 1rem; font-weight: 600; }
+        td { padding: 0.75rem 1rem; border-top: 1px solid #e9ecef; }
+        tr:hover td { background: #f8f9fa; }
+        a { color: #0969da; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        footer { margin-top: 2rem; text-align: center; color: #666; font-size: 0.85rem; }
+        .spinner { display: none; }
+        .loading .spinner { display: inline-block; animation: spin 1s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .toolbar { display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap; }
+        .toolbar input[type="text"] { padding: 0.5rem 0.75rem; border: 1px solid #d0d7de; border-radius: 6px; font-size: 0.9rem; width: 300px; }
+        .toolbar label { font-size: 0.9rem; display: flex; align-items: center; gap: 0.4rem; cursor: pointer; user-select: none; }
+        .kill-btn { padding: 0.3rem 0.6rem; background: #cf222e; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.8rem; }
+        .kill-btn:hover { background: #a40e26; }
+        .kill-btn:disabled { background: #ccc; cursor: not-allowed; }
+        .args-hint { cursor: help; color: #888; font-size: 0.8rem; }
+        .copy-btn { background: none; border: none; cursor: pointer; padding: 0.1rem 0.3rem; font-size: 0.75rem; color: #888; opacity: 0.5; transition: opacity 0.2s; }
+        .copy-btn:hover { opacity: 1; color: #0969da; }
+        .toast { position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%); background: #1f2328; color: white; padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.85rem; opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 1000; }
+        .toast.show { opacity: 1; }
+        .auto-refresh { font-size: 0.85rem; display: inline-flex; align-items: center; gap: 0.3rem; font-weight: normal; cursor: pointer; }
+        .auto-refresh select { padding: 0.2rem 0.4rem; border: 1px solid #d0d7de; border-radius: 4px; font-size: 0.8rem; }
+    </style>
+</head>
+<body>
+    <h1>👂 Listening Ports <button id="refreshBtn">↻ Refresh</button> <label class="auto-refresh"><input type="checkbox" id="autoRefresh"> Auto <select id="autoInterval"><option value="30" selected>30s</option><option value="60">1min</option><option value="300">5min</option><option value="900">15min</option></select></label> <span class="spinner">⏳</span></h1>
+    <div class="toolbar">
+        <input type="text" id="filter" placeholder="Filter by path, process name, or port…">
+        <label><input type="checkbox" id="includeAll"> Include all (show system processes)</label>
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>PID</th>
+                <th>Working Dir</th>
+                <th>Command</th>
+                <th>Addresses</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody id="content"></tbody>
+    </table>
+    <footer>Made with ❤︎ by <a href="https://9h41.org" target="_blank">9h41.org</a></footer>
+    <div class="toast" id="toast">Copied!</div>
+    <script>
+        const content = document.getElementById("content");
+        const body = document.body;
+        const filterInput = document.getElementById("filter");
+        const includeAllCheckbox = document.getElementById("includeAll");
+        let allData = [];
+
+        const userHome = null; // resolved from data heuristic
+
+        function esc(str) {
+            const el = document.createElement("span");
+            el.textContent = str;
+            return el.innerHTML;
+        }
+
+        function escAttr(str) {
+            return str.replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/'/g,"&#39;").replace(/</g,"&lt;");
+        }
+
+        function copyBtn(value) {
+            if (!value) return "";
+            return ` <button class="copy-btn" data-copy="${escAttr(value)}">📋</button>`;
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById("toast");
+            toast.textContent = msg || "Copied!";
+            toast.classList.add("show");
+            setTimeout(() => toast.classList.remove("show"), 1500);
+        }
+
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => showToast("Copied!"));
+        }
+
+        document.addEventListener("click", (e) => {
+            const btn = e.target.closest(".copy-btn");
+            if (btn) copyToClipboard(btn.dataset.copy);
+        });
+
+        function getUserHome(data) {
+            // Heuristic: find the most common /Users/X or /home/X prefix among cwd entries
+            const homes = data
+                .map(e => e.cwd)
+                .filter(Boolean)
+                .map(cwd => {
+                    const m = cwd.match(/^(\/(?:Users|home)\/[^/]+)/);
+                    return m ? m[1] : null;
+                })
+                .filter(Boolean);
+            if (homes.length === 0) return null;
+            const counts = {};
+            homes.forEach(h => counts[h] = (counts[h] || 0) + 1);
+            return Object.entries(counts).sort((a, b) => b[1] - a[1])[0][0];
+        }
+
+        function render() {
+            const query = filterInput.value.toLowerCase();
+            const includeAll = includeAllCheckbox.checked;
+            const home = getUserHome(allData);
+
+            const filtered = allData.filter(entry => {
+                // Include all toggle: when off, only show processes with cwd under user home
+                if (!includeAll && home) {
+                    if (!entry.cwd || !entry.cwd.startsWith(home)) return false;
+                }
+                // Text filter
+                if (query) {
+                    const haystack = [
+                        entry.cwd || "",
+                        entry.name,
+                        entry.args || "",
+                        ...entry.listen
+                    ].join(" ").toLowerCase();
+                    return haystack.includes(query);
+                }
+                return true;
+            });
+
+            content.innerHTML = filtered.map(entry => {
+                const links = entry.listen
+                    .map(p => p.replace("*", location.hostname).replace("localhost", location.hostname))
+                    .filter((v, i, a) => a.indexOf(v) === i)
+                    .sort((a, b) => parseInt(a.split(":")[1]) - parseInt(b.split(":")[1]))
+                    .map(p => `<a href="http://${esc(p)}" target="_blank">${esc(p)}</a>`)
+                    .join(", ");
+                const fullCmd = entry.args || entry.name;
+                const argsOnly = (entry.args || "").replace(/^\S+\s*/, "");
+                const argsHint = argsOnly ? ` <span class="args-hint" title="${escAttr(argsOnly)}">ⓘ</span>` : "";
+                const pidStr = String(entry.pid);
+                const cwd = entry.cwd || "";
+                return `<tr><td>${esc(pidStr)}${copyBtn(pidStr)}</td><td>${esc(cwd)}${copyBtn(cwd)}</td><td>${esc(entry.name)}${argsHint}${copyBtn(fullCmd)}</td><td>${links}</td><td><button class="kill-btn" onclick="killProcess(${entry.pid}, this)">Kill</button></td></tr>`;
+            }).join("");
+        }
+
+        async function scan() {
+            body.classList.add("loading");
+            try {
+                const res = await fetch("/scan");
+                allData = await res.json();
+                render();
+            } finally {
+                body.classList.remove("loading");
+            }
+        }
+
+        filterInput.addEventListener("input", render);
+        includeAllCheckbox.addEventListener("change", render);
+
+        async function killProcess(pid, btn) {
+            if (!confirm(`Kill process ${pid}?`)) return;
+            btn.disabled = true;
+            btn.textContent = "…";
+            const res = await fetch(`/kill/${pid}`, { method: "POST" });
+            if (res.ok) {
+                btn.textContent = "✓";
+                setTimeout(scan, 500);
+            } else {
+                btn.disabled = false;
+                btn.textContent = "✗ Failed";
+                setTimeout(() => { btn.textContent = "Kill"; }, 2000);
+            }
+        }
+
+        scan();
+        document.getElementById("refreshBtn").addEventListener("click", scan);
+
+        let autoTimer = null;
+        const autoRefreshCheckbox = document.getElementById("autoRefresh");
+        const autoIntervalSelect = document.getElementById("autoInterval");
+
+        function startAutoRefresh() {
+            stopAutoRefresh();
+            if (autoRefreshCheckbox.checked) {
+                const interval = parseInt(autoIntervalSelect.value) * 1000;
+                autoTimer = setInterval(scan, interval);
+            }
+        }
+
+        function stopAutoRefresh() {
+            if (autoTimer) { clearInterval(autoTimer); autoTimer = null; }
+        }
+
+        autoRefreshCheckbox.addEventListener("change", startAutoRefresh);
+        autoIntervalSelect.addEventListener("change", startAutoRefresh);
+    </script>
+</body>
+</html>

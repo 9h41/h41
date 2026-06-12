@@ -1,0 +1,15 @@
+[package]
+name = "h41"
+version = "0.1.0"
+edition = "2021"
+authors = ["Cedric Gatay <cedric@9h41.org>"]
+description = "A tool to discover and display TCP ports in use on the local machine"
+
+[dependencies]
+axum = "0.8"
+tokio = { version = "1", features = ["full"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+itertools = "0.14"
+regex = "1"
+clap = { version = "4", features = ["derive"] }
