@@ -1,7 +1,3 @@
-mod ports;
-mod server;
-mod tui;
-
 use clap::Parser;
 
 #[derive(Parser)]
@@ -24,18 +20,18 @@ struct Cli {
 async fn main() {
     let cli = Cli::parse();
 
-    if !ports::is_available() {
+    if !h41::ports::is_available() {
         eprintln!("🙉 lsof is not available on this system");
         std::process::exit(1);
     }
 
     if cli.json {
-        let entries = ports::all();
+        let entries = h41::ports::all();
         println!("{}", serde_json::to_string_pretty(&entries).unwrap());
     } else if cli.web {
-        server::start(cli.port).await;
+        h41::server::start(cli.port).await;
     } else {
-        if let Err(e) = tui::run() {
+        if let Err(e) = h41::tui::run() {
             eprintln!("Error: {}", e);
             std::process::exit(1);
         }
