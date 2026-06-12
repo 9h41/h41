@@ -17,6 +17,15 @@ A lightweight tool that discovers all listening TCP ports on your machine and se
 
 ## Installation
 
+### Homebrew
+
+```bash
+brew tap 9h41/h41 https://github.com/9h41/h41
+brew install h41
+```
+
+### From source
+
 ```bash
 cargo install --path .
 ```
