@@ -287,11 +287,7 @@ fn ui(f: &mut ratatui::Frame, state: &mut AppState) {
                 .map(|a| a.replace('*', "localhost"))
                 .collect::<Vec<_>>()
                 .join(", ");
-            let cmd = if let Some(ref args) = entry.args {
-                args.clone()
-            } else {
-                entry.name.clone()
-            };
+            let cmd = entry.name.clone();
             Row::new(vec![
                 Cell::from(entry.pid.to_string()),
                 Cell::from(cmd),
