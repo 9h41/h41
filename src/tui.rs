@@ -240,7 +240,7 @@ fn handle_key(key: KeyEvent, state: &mut AppState) -> Action {
                 if let Some(addr) = entry.listen.first() {
                     let url = format!(
                         "http://{}",
-                        addr.replace('*', "localhost").replace("localhost", "localhost")
+                        addr.replace('*', "localhost")
                     );
                     if open::that(&url).is_ok() {
                         state.set_status(format!("Opened {}", url));
