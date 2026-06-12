@@ -80,14 +80,34 @@ jobs:
 
   update-tap:
     needs: release
-    runs-on: macos-latest
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           ref: main
 
-      - name: Update Homebrew formula
-        run: ./scripts/update-formula.sh ${{ github.ref_name }}
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          merge-multiple: true
+
+      - name: Generate formula from artifacts
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          cp Formula/h41.rb.template Formula/h41.rb
+          for pair in \
+            "SHA256_MACOS_ARM64:h41-macos-arm64.tar.gz" \
+            "SHA256_MACOS_X64:h41-macos-x64.tar.gz" \
+            "SHA256_LINUX_ARM64:h41-linux-arm64.tar.gz" \
+            "SHA256_LINUX_X64:h41-linux-x64.tar.gz"; do
+            key="${pair%%:*}"
+            file="${pair#*:}"
+            sha=$(sha256sum "$file" | cut -d' ' -f1)
+            sed -i "s/\${${key}}/${sha}/" Formula/h41.rb
+          done
+          sed -i "s/\${VERSION}/${VERSION}/" Formula/h41.rb
+          echo "Generated formula:"
+          cat Formula/h41.rb
 
       - name: Commit and push formula
         run: |

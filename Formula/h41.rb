@@ -7,20 +7,20 @@ class H41 < Formula
   on_macos do
     if Hardware::CPU.arm?
       url "https://github.com/9h41/h41/releases/download/v#{version}/h41-macos-arm64.tar.gz"
-      sha256 "0019dfc4b32d63c1392aa264aed2253c1e0c2fb09216f8e2cc269bbfb8bb49b5"
+      sha256 "ddf7d1a2ff57e60cbabee61f72757968d4da53d6e287d8b273df4009cee2ad7e"
     else
       url "https://github.com/9h41/h41/releases/download/v#{version}/h41-macos-x64.tar.gz"
-      sha256 "0019dfc4b32d63c1392aa264aed2253c1e0c2fb09216f8e2cc269bbfb8bb49b5"
+      sha256 "637e3b1ff20c1e6aadbca705b146e2f5bf0fd8e64ed03a4921cc4b14ea9ed23a"
     end
   end
 
   on_linux do
     if Hardware::CPU.arm?
       url "https://github.com/9h41/h41/releases/download/v#{version}/h41-linux-arm64.tar.gz"
-      sha256 "0019dfc4b32d63c1392aa264aed2253c1e0c2fb09216f8e2cc269bbfb8bb49b5"
+      sha256 "b745af6353b8c491a1487f32f0cbcffc456986ccdf92a26f635e24bf82061e10"
     else
       url "https://github.com/9h41/h41/releases/download/v#{version}/h41-linux-x64.tar.gz"
-      sha256 "0019dfc4b32d63c1392aa264aed2253c1e0c2fb09216f8e2cc269bbfb8bb49b5"
+      sha256 "40ee3141e499187687e507a1fdde430a2f1b480886250f4b401895ac6dc153b5"
     end
   end
 
