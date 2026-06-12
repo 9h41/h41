@@ -1,5 +1,6 @@
 mod ports;
 mod server;
+mod tui;
 
 use clap::Parser;
 
@@ -13,6 +14,10 @@ struct Cli {
     /// Output as JSON to stdout instead of starting the web server
     #[arg(long)]
     json: bool,
+
+    /// Start the web server instead of the TUI
+    #[arg(long)]
+    web: bool,
 }
 
 #[tokio::main]
@@ -27,7 +32,12 @@ async fn main() {
     if cli.json {
         let entries = ports::all();
         println!("{}", serde_json::to_string_pretty(&entries).unwrap());
-    } else {
+    } else if cli.web {
         server::start(cli.port).await;
+    } else {
+        if let Err(e) = tui::run() {
+            eprintln!("Error: {}", e);
+            std::process::exit(1);
+        }
     }
 }
