@@ -1,0 +1,19 @@
+cask "h41" do
+  version "${VERSION}"
+
+  on_arm do
+    sha256 "${SHA256_MACOS_ARM64}"
+    url "https://github.com/9h41/h41/releases/download/v#{version}/h41-macos-arm64.tar.gz"
+  end
+
+  on_intel do
+    sha256 "${SHA256_MACOS_X64}"
+    url "https://github.com/9h41/h41/releases/download/v#{version}/h41-macos-x64.tar.gz"
+  end
+
+  name "h41"
+  desc "Discover and manage listening TCP ports via a web UI"
+  homepage "https://github.com/9h41/h41"
+
+  binary "h41"
+end
