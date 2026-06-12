@@ -2,12 +2,12 @@ cask "h41" do
   version "0.1.0"
 
   on_arm do
-    sha256 "ddf7d1a2ff57e60cbabee61f72757968d4da53d6e287d8b273df4009cee2ad7e"
+    sha256 "17376c301280bc3cd81471ccf90868ad96c2b2bc0f6572d67e09235acdea5031"
     url "https://github.com/9h41/h41/releases/download/v#{version}/h41-macos-arm64.tar.gz"
   end
 
   on_intel do
-    sha256 "637e3b1ff20c1e6aadbca705b146e2f5bf0fd8e64ed03a4921cc4b14ea9ed23a"
+    sha256 "70463e2c031115345e6424d4fe948602ce710f2dc0ca062b79d6eeea26a55a75"
     url "https://github.com/9h41/h41/releases/download/v#{version}/h41-macos-x64.tar.gz"
   end
 
