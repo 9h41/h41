@@ -5,6 +5,9 @@ edition = "2021"
 authors = ["Cedric Gatay <cedric@9h41.org>"]
 description = "A tool to discover and display TCP ports in use on the local machine"
 
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(test)'] }
+
 [dependencies]
 axum = "0.8"
 tokio = { version = "1", features = ["full"] }
