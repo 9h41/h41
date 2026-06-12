@@ -62,6 +62,7 @@ struct AppState {
     filter: String,
     filtering: bool,
     show_all: bool,
+    confirm_kill: Option<PortEntry>,
     status_message: Option<(String, Instant)>,
     last_refresh: Instant,
 }
@@ -74,6 +75,7 @@ impl AppState {
             filter: String::new(),
             filtering: false,
             show_all: false,
+            confirm_kill: None,
             status_message: None,
             last_refresh: Instant::now(),
         }
@@ -157,6 +159,31 @@ enum Action {
 }
 
 fn handle_key(key: KeyEvent, state: &mut AppState) -> Action {
+    // In confirm kill mode
+    if let Some(ref entry) = state.confirm_kill.clone() {
+        match key.code {
+            KeyCode::Char('y') | KeyCode::Char('Y') => {
+                let pid = entry.pid;
+                let result = Command::new("kill").arg(pid.to_string()).status();
+                match result {
+                    Ok(s) if s.success() => {
+                        state.set_status(format!("Killed PID {}", pid));
+                        state.refresh();
+                    }
+                    _ => {
+                        state.set_status(format!("Failed to kill PID {}", pid));
+                    }
+                }
+                state.confirm_kill = None;
+            }
+            _ => {
+                state.confirm_kill = None;
+                state.set_status("Kill cancelled".to_string());
+            }
+        }
+        return Action::Continue;
+    }
+
     // In filter mode, handle text input
     if state.filtering {
         match key.code {
@@ -226,17 +253,8 @@ fn handle_key(key: KeyEvent, state: &mut AppState) -> Action {
         }
         KeyCode::Char('x') => {
             if let Some(entry) = state.selected_entry().cloned() {
-                let pid = entry.pid;
-                let result = Command::new("kill").arg(pid.to_string()).status();
-                match result {
-                    Ok(s) if s.success() => {
-                        state.set_status(format!("Killed PID {}", pid));
-                        state.refresh();
-                    }
-                    _ => {
-                        state.set_status(format!("Failed to kill PID {}", pid));
-                    }
-                }
+                state.set_status(format!("Kill {} (PID {})? y/N", entry.name, entry.pid));
+                state.confirm_kill = Some(entry);
             }
             Action::Continue
         }
