@@ -94,20 +94,23 @@ jobs:
       - name: Generate formula and cask from artifacts
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
+          
+          # Formula (source build)
           cp Formula/h41.rb.template Formula/h41.rb
+          SOURCE_SHA=$(curl -sL "https://github.com/9h41/h41/archive/refs/tags/${GITHUB_REF_NAME}.tar.gz" | sha256sum | cut -d' ' -f1)
+          sed -i "s/\${SHA256_SOURCE}/${SOURCE_SHA}/" Formula/h41.rb
+          sed -i "s/\${VERSION}/${VERSION}/" Formula/h41.rb
+
+          # Cask (prebuilt binary)
           cp Casks/h41.rb.template Casks/h41.rb
           for pair in \
             "SHA256_MACOS_ARM64:h41-macos-arm64.tar.gz" \
-            "SHA256_MACOS_X64:h41-macos-x64.tar.gz" \
-            "SHA256_LINUX_ARM64:h41-linux-arm64.tar.gz" \
-            "SHA256_LINUX_X64:h41-linux-x64.tar.gz"; do
+            "SHA256_MACOS_X64:h41-macos-x64.tar.gz"; do
             key="${pair%%:*}"
             file="${pair#*:}"
             sha=$(sha256sum "$file" | cut -d' ' -f1)
-            sed -i "s/\${${key}}/${sha}/" Formula/h41.rb
             sed -i "s/\${${key}}/${sha}/" Casks/h41.rb
           done
-          sed -i "s/\${VERSION}/${VERSION}/" Formula/h41.rb
           sed -i "s/\${VERSION}/${VERSION}/" Casks/h41.rb
 
       - name: Commit and push formula
