@@ -5,9 +5,10 @@ class H41 < Formula
   sha256 "d1c46b79e2f1748e03fc7e8df45d9179216208418bba76a3626ae14a82ee6faf"
   license "MIT"
 
+  depends_on "rust" => :build
+
   def install
-    cargo = which("cargo") || Formula["rust"].opt_bin/"cargo"
-    system cargo, "install", *std_cargo_args
+    system "cargo", "install", *std_cargo_args
   end
 
   test do
