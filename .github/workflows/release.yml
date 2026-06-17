@@ -25,6 +25,9 @@ jobs:
           - target: aarch64-unknown-linux-gnu
             os: ubuntu-latest
             name: h41-linux-arm64
+          - target: x86_64-pc-windows-msvc
+            os: windows-latest
+            name: h41-windows-x64
 
     runs-on: ${{ matrix.os }}
 
@@ -47,17 +50,24 @@ jobs:
         env:
           CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER: aarch64-linux-gnu-gcc
 
-      - name: Package
+      - name: Package (Unix)
+        if: runner.os != 'Windows'
         run: |
           cd target/${{ matrix.target }}/release
           tar czf ../../../${{ matrix.name }}.tar.gz h41
           cd ../../..
 
+      - name: Package (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          Compress-Archive -Path "target/${{ matrix.target }}/release/h41.exe" -DestinationPath "${{ matrix.name }}.zip"
+
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.name }}
-          path: ${{ matrix.name }}.tar.gz
+          path: ${{ matrix.name }}.*
 
   release:
     needs: build
@@ -77,6 +87,7 @@ jobs:
             h41-macos-arm64.tar.gz
             h41-linux-x64.tar.gz
             h41-linux-arm64.tar.gz
+            h41-windows-x64.zip
 
   update-tap:
     needs: release
@@ -119,4 +130,35 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add Formula/h41.rb Casks/h41.rb
           git commit -m "Update formula and cask for ${{ github.ref_name }}"
+          git pull --rebase origin main
+          git push origin main
+
+  update-scoop:
+    needs: release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Download Windows artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: h41-windows-x64
+
+      - name: Generate Scoop manifest
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          WIN_SHA=$(sha256sum h41-windows-x64.zip | cut -d' ' -f1)
+          cp Scoop/h41.json.template Scoop/h41.json
+          sed -i "s/\${VERSION}/${VERSION}/" Scoop/h41.json
+          sed -i "s/\${SHA256_WINDOWS_X64}/${WIN_SHA}/" Scoop/h41.json
+
+      - name: Commit and push Scoop manifest
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git pull --rebase origin main
+          git add Scoop/h41.json
+          git commit -m "Update Scoop manifest for ${{ github.ref_name }}"
           git push origin main
