@@ -2,7 +2,7 @@ class H41 < Formula
   desc "Discover and manage listening TCP ports via a web UI"
   homepage "https://github.com/9h41/h41"
   url "https://github.com/9h41/h41/archive/refs/tags/v0.1.2.tar.gz"
-  sha256 "57f3f7dc3bcabf8e9d42b00c6f181bb43be4213d1aeb9a145d13a97bc0b1b56a"
+  sha256 "ef94877303741c9f0106f37e1e69fe6cb592cd5674f5bd436ebae9c0f32500f2"
   license "MIT"
 
   depends_on "rust" => :build
