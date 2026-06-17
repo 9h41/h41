@@ -12,7 +12,6 @@ use ratatui::{
     Terminal,
 };
 use std::io;
-use std::process::Command;
 use std::time::{Duration, Instant};
 
 use crate::ports::{self, PortEntry};
@@ -124,23 +123,8 @@ impl AppState {
     }
 
     fn detect_home(&self) -> Option<String> {
-        let homes: Vec<String> = self
-            .entries
-            .iter()
-            .filter_map(|e| e.cwd.as_ref())
-            .filter_map(|cwd| {
-                let re = regex::Regex::new(r"^(/(?:Users|home)/[^/]+)").ok()?;
-                re.captures(cwd).map(|c| c[1].to_string())
-            })
-            .collect();
-        if homes.is_empty() {
-            return None;
-        }
-        let mut counts = std::collections::HashMap::new();
-        for h in &homes {
-            *counts.entry(h.clone()).or_insert(0) += 1;
-        }
-        counts.into_iter().max_by_key(|(_k, v)| *v).map(|(k, _)| k)
+        let cwds = self.entries.iter().filter_map(|e| e.cwd.clone());
+        ports::detect_home_prefix(cwds)
     }
 
     fn selected_entry(&self) -> Option<&PortEntry> {
@@ -164,15 +148,11 @@ fn handle_key(key: KeyEvent, state: &mut AppState) -> Action {
         match key.code {
             KeyCode::Char('y') | KeyCode::Char('Y') => {
                 let pid = entry.pid;
-                let result = Command::new("kill").arg(pid.to_string()).status();
-                match result {
-                    Ok(s) if s.success() => {
-                        state.set_status(format!("Killed PID {}", pid));
-                        state.refresh();
-                    }
-                    _ => {
-                        state.set_status(format!("Failed to kill PID {}", pid));
-                    }
+                if ports::kill_pid(pid) {
+                    state.set_status(format!("Killed PID {}", pid));
+                    state.refresh();
+                } else {
+                    state.set_status(format!("Failed to kill PID {}", pid));
                 }
                 state.confirm_kill = None;
             }

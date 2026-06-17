@@ -61,6 +61,7 @@ h41 --json
 ## Requirements
 
 - macOS or Linux with `lsof` available
+- Windows with `netstat` available (built-in)
 
 ## License
 
