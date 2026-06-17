@@ -43,13 +43,12 @@ async fn kill_process(headers: HeaderMap, Path(pid): Path<i64>) -> StatusCode {
     }
 
     let result = tokio::task::spawn_blocking(move || {
-        use std::process::Command;
-        Command::new("kill").arg(pid.to_string()).status()
+        crate::ports::kill_pid(pid)
     })
     .await;
 
     match result {
-        Ok(Ok(status)) if status.success() => StatusCode::OK,
+        Ok(true) => StatusCode::OK,
         _ => StatusCode::INTERNAL_SERVER_ERROR,
     }
 }

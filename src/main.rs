@@ -21,7 +21,11 @@ async fn main() {
     let cli = Cli::parse();
 
     if !h41::ports::is_available() {
-        eprintln!("🙉 lsof is not available on this system");
+        if cfg!(unix) {
+            eprintln!("🙉 lsof is not available on this system");
+        } else {
+            eprintln!("🙉 netstat is not available on this system");
+        }
         std::process::exit(1);
     }
 
