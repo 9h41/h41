@@ -16,12 +16,24 @@ A lightweight tool that discovers all listening TCP ports on your machine with a
 
 ## Installation
 
-### Homebrew
+### Homebrew (macOS/Linux)
 
 ```bash
 brew tap 9h41/h41 https://github.com/9h41/h41
 brew install h41
 ```
+
+### Scoop (Windows)
+
+```powershell
+scoop bucket add h41 https://github.com/9h41/h41
+scoop install h41
+```
+
+### Download from GitHub Releases
+
+Pre-built binaries for macOS, Linux, and Windows are available on the
+[Releases](https://github.com/9h41/h41/releases) page.
 
 ### From source
 
