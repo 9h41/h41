@@ -1,5 +1,10 @@
-use axum::{Router, response::Html, routing::{get, post}, extract::Path};
-use axum::http::{StatusCode, HeaderMap};
+use axum::http::{HeaderMap, StatusCode};
+use axum::{
+    extract::Path,
+    response::Html,
+    routing::{get, post},
+    Router,
+};
 use std::net::SocketAddr;
 
 use crate::ports;
@@ -42,10 +47,7 @@ async fn kill_process(headers: HeaderMap, Path(pid): Path<i64>) -> StatusCode {
         return StatusCode::BAD_REQUEST;
     }
 
-    let result = tokio::task::spawn_blocking(move || {
-        crate::ports::kill_pid(pid)
-    })
-    .await;
+    let result = tokio::task::spawn_blocking(move || crate::ports::kill_pid(pid)).await;
 
     match result {
         Ok(true) => StatusCode::OK,

@@ -195,9 +195,7 @@ mod platform {
         // netstat -ano output looks like:
         //   TCP    0.0.0.0:8080           0.0.0.0:0              LISTENING       1234
         //   TCP    [::]:8080              [::]:0                 LISTENING       1234
-        let line_re = Regex::new(
-            r"(?i)^\s*TCP\s+(\S+)\s+\S+\s+LISTENING\s+(\d+)"
-        ).unwrap();
+        let line_re = Regex::new(r"(?i)^\s*TCP\s+(\S+)\s+\S+\s+LISTENING\s+(\d+)").unwrap();
 
         let mut pid_map: HashMap<i64, Vec<String>> = HashMap::new();
 
