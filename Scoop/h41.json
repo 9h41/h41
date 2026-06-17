@@ -1,0 +1,21 @@
+{
+    "version": "0.1.2",
+    "description": "Discover and manage listening TCP ports via a web UI",
+    "homepage": "https://github.com/9h41/h41",
+    "license": "MIT",
+    "architecture": {
+        "64bit": {
+            "url": "https://github.com/9h41/h41/releases/download/v0.1.2/h41-windows-x64.zip",
+            "hash": "eecb9b655ce5ccb37d355d42c3912cd2c22daec2e1e4d3a0526730e13d2bcee6"
+        }
+    },
+    "bin": "h41.exe",
+    "checkver": "github",
+    "autoupdate": {
+        "architecture": {
+            "64bit": {
+                "url": "https://github.com/9h41/h41/releases/download/v$version/h41-windows-x64.zip"
+            }
+        }
+    }
+}
